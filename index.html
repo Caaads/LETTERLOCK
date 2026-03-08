@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LetterLock - Word Battle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="game-card">
+        <header class="topbar">
+          <h1 class="game-title">LetterLock</h1>
+          <div class="scoreboard" aria-live="polite">
+            <span>Player: <strong id="playerScore">0</strong></span>
+            <span>Bot: <strong id="botScore">0</strong></span>
+          </div>
+        </header>
+
+        <section id="startScreen" class="panel active">
+          <h2>Word Battle Prototype</h2>
+          <p>
+            Pick your letter, race the bot, and submit a valid word first.
+          </p>
+          <p id="lastDifficultyText" class="last-difficulty" hidden></p>
+
+          <label class="difficulty-label" for="difficultySelect">Bot Difficulty</label>
+          <select id="difficultySelect" class="difficulty-select">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+
+          <button id="startGameBtn" class="btn btn-primary">Start Game</button>
+        </section>
+
+        <section id="letterPhase" class="panel" aria-hidden="true">
+          <h2>Choose Your Letter</h2>
+          <p>Pick one letter from A to Z.</p>
+          <div id="letterGrid" class="letter-grid" role="listbox" aria-label="Letter choices"></div>
+          <div class="panel-actions">
+            <button id="confirmLetterBtn" class="btn btn-primary" disabled>
+              Lock Letter
+            </button>
+            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+          </div>
+        </section>
+
+        <section id="revealPhase" class="panel" aria-hidden="true">
+          <h2>Round Reveal</h2>
+          <div class="letters-display">
+            <div class="letter-chip">
+              <span class="label">Your Letter</span>
+              <strong id="revealPlayerLetter">A</strong>
+            </div>
+            <div class="letter-chip bot">
+              <span class="label">Bot Letter</span>
+              <strong id="revealBotLetter">?</strong>
+            </div>
+          </div>
+          <p id="revealCountdown" class="countdown">3</p>
+          <div class="panel-actions">
+            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+          </div>
+        </section>
+
+        <section id="challengePhase" class="panel" aria-hidden="true">
+          <h2>Word Challenge</h2>
+          <div class="letters-display compact">
+            <div class="letter-chip">
+              <span class="label">Your Letter</span>
+              <strong id="livePlayerLetter">A</strong>
+            </div>
+            <div class="letter-chip bot">
+              <span class="label">Bot Letter</span>
+              <strong id="liveBotLetter">E</strong>
+            </div>
+          </div>
+
+          <div class="timer-wrap" aria-live="polite">
+            <div id="timerRing" class="timer-ring" role="img" aria-label="Timer">
+              <span id="timerText">15</span>
+            </div>
+          </div>
+
+          <p id="botStatus" class="bot-status">Bot is thinking...</p>
+
+          <form id="wordForm" class="word-form" autocomplete="off">
+            <input
+              id="wordInput"
+              class="word-input"
+              type="text"
+              minlength="4"
+              placeholder="Type your word"
+              aria-label="Type your word"
+            />
+            <button id="submitWordBtn" class="btn btn-primary" type="submit">Submit</button>
+          </form>
+          <p id="inputHint" class="hint"></p>
+          <div class="panel-actions">
+            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+          </div>
+        </section>
+
+        <section id="resultPhase" class="panel" aria-hidden="true">
+          <h2>Round Result</h2>
+          <p id="winnerText" class="winner-text"></p>
+          <div class="result-grid">
+            <div>
+              <span>You:</span>
+              <strong id="resultPlayerWord">-</strong>
+            </div>
+            <div>
+              <span>Bot:</span>
+              <strong id="resultBotWord">-</strong>
+            </div>
+          </div>
+          <p id="resultSuggestions" class="result-suggestions"></p>
+          <div class="panel-actions">
+            <button id="nextRoundBtn" class="btn btn-secondary">Next Round</button>
+            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
