@@ -336,6 +336,16 @@ p {
   pointer-events: none;
   animation: confetti-fall 1.1s linear forwards;
 }
+  .footer {
+    margin-top: auto;
+    color: white;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .footer-text {
+    font-size: 0.8em;
+  }
 
 @keyframes rise-in {
   from {
