@@ -1,0 +1,1 @@
+LetterLock is a word-based game where two players take turns to type out a word based on a randomly generated letter. The game is played in rounds-based fashion, with each round lasting for a set amount of time. Each player has a limited amount of time to think of a word before the round ends. The game continues until one of the players runs out of words or time.
