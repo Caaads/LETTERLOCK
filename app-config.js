@@ -9,5 +9,5 @@ window.APP_CONFIG = {
 
   // Optional explicit OAuth return URL.
   // Leave empty to use the current site origin (recommended for Vercel).
-  oauthRedirectTo: ""
+  oauthRedirectTo: "https://letterlock.vercel.app"
 };
