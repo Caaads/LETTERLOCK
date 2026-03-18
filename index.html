@@ -50,7 +50,7 @@
                 <input id="roomCodeInput" class="word-input" type="text" maxlength="8" placeholder="e.g. LOCK123" />
                 <button id="joinRoomBtn" class="btn btn-secondary">Join Room</button>
               </div>
-              <p class="small-text">You can share this code so a friend can join the same room.</p>
+              <p class="small-text">Type room code to join existing room or create a new one</p>
             </div>
 
             <div class="mode-group">
@@ -70,6 +70,38 @@
           <p id="lobbyRoomText">Room: -</p>
           <p id="lobbyStatusText">Waiting for opponent...</p>
           <p id="lobbyPlayersText" class="small-text"></p>
+
+          <div class="mode-panel room-settings" id="roomSettingsPanel">
+            <h3>Room Settings</h3>
+            <p id="roomHostText" class="small-text">Host: -</p>
+            <div class="mode-group">
+              <label class="difficulty-label" for="roomModeSelect">Mode</label>
+              <select id="roomModeSelect" class="difficulty-select">
+                <option value="pick">Default Mode (Pick Letters)</option>
+                <option value="random">Random Letter Mode</option>
+              </select>
+            </div>
+            <div class="mode-group" id="pickTimeSettingGroup">
+              <label class="difficulty-label" for="pickSecondsSelect">Letter Pick Time</label>
+              <select id="pickSecondsSelect" class="difficulty-select">
+                <option value="5" selected>5 seconds</option>
+                <option value="7">7 seconds</option>
+                <option value="10">10 seconds</option>
+              </select>
+            </div>
+            <div class="mode-group" id="repeatCooldownSettingGroup">
+              <label class="difficulty-label" for="repeatCooldownSelect">Repeat Letter Cooldown</label>
+              <select id="repeatCooldownSelect" class="difficulty-select">
+                <option value="0">Off</option>
+                <option value="2" selected>Block last 2 rounds</option>
+                <option value="3">Block last 3 rounds</option>
+              </select>
+            </div>
+            <div class="panel-actions">
+              <button id="saveRoomSettingsBtn" class="btn btn-secondary">Save Settings</button>
+            </div>
+          </div>
+
           <div class="panel-actions">
             <button id="lobbyReadyBtn" class="btn btn-primary" disabled>Ready</button>
             <button id="lobbyPlayBtn" class="btn btn-secondary" disabled>Play</button>
@@ -80,6 +112,8 @@
         <section id="letterPhase" class="panel" aria-hidden="true">
           <h2>Choose Your Letter</h2>
           <p>Pick one letter from A to Z.</p>
+          <p id="pickTimerBadge" class="pick-timer" hidden>Time left: <strong id="pickTimerText">5</strong>s</p>
+          <p id="pickStatusText" class="small-text" hidden></p>
           <div id="letterGrid" class="letter-grid" role="listbox" aria-label="Letter choices"></div>
           <div class="panel-actions">
             <button id="confirmLetterBtn" class="btn btn-primary" disabled>Lock Letter</button>
@@ -152,6 +186,16 @@
           <p id="resultSuggestions" class="result-suggestions"></p>
           <div class="panel-actions">
             <button id="nextRoundBtn" class="btn btn-secondary">Next Round</button>
+            <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
+          </div>
+        </section>
+
+        <section id="endPhase" class="panel" aria-hidden="true">
+          <p id="endFace" class="end-face">:-)</p>
+          <h2 id="endTitle">Victory!</h2>
+          <p id="endMessage" class="winner-text"></p>
+          <p id="endSubMessage" class="result-suggestions"></p>
+          <div class="panel-actions">
             <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
           </div>
         </section>

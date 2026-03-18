@@ -5,9 +5,17 @@ const STARTING_LIVES = 20;
 const DATAMUSE_URL = "https://api.datamuse.com/words";
 const DATAMUSE_MAX_RESULTS = 120;
 const wordCache = new Map();
+const exactWordCache = new Map();
 const APP_CONFIG = window.APP_CONFIG || {};
-const SOCKET_SERVER_URL = normalizeBaseUrl(APP_CONFIG.socketServerUrl);
+const IS_LOCAL_HOST = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+const SOCKET_SERVER_URL = IS_LOCAL_HOST
+  ? ""
+  : normalizeBaseUrl(APP_CONFIG.socketServerUrl);
 const OAUTH_REDIRECT_TO = normalizeBaseUrl(APP_CONFIG.oauthRedirectTo) || window.location.origin;
+const ROOM_MODES = {
+  PICK: "pick",
+  RANDOM: "random"
+};
 
 const DIFFICULTIES = {
   easy: {
@@ -71,7 +79,8 @@ const FALLBACK_WORDS = [
   "mettle", "midnight", "might", "mild", "military", "milk", "mill", "mindful", "miracle", "mischief",
   "misery", "misfit", "misfortune", "misguided", "mishap", "missile", "mission", "mistake", "mister",
   "mix", "moan", "mobile", "mock", "model", "modern", "modest", "modify", "module", "moisture", "molecule",
-  "moment", "monarch", "monastery", "monument", "mood", "moral", "morality", "morbid", "moral"
+  "moment", "monarch", "monastery", "monument", "mood", "moral", "morality", "morbid", "moral",
+  "yawa", "bogo", "potangina", "bolok", "putangina", "tarantado", "gago", "tanga", "ulol", "bushet", "boshet", "boset"
 ];
 
 const state = {
@@ -104,6 +113,16 @@ const state = {
   lobbyPlayers: [],
   lobbyReadySocketIds: [],
   lobbyReadyUserIds: [],
+  hostSocketId: null,
+  roomSettings: {
+    mode: ROOM_MODES.PICK,
+    pickSeconds: 5,
+    repeatCooldownRounds: 2
+  },
+  pickDisallowedLetters: [],
+  pickDeadlineMs: null,
+  pickTickId: null,
+  pickSubmitted: false,
   opponentName: "Opponent",
   roundPendingStart: false
 };
@@ -115,6 +134,7 @@ const el = {
   revealPhase: document.getElementById("revealPhase"),
   challengePhase: document.getElementById("challengePhase"),
   resultPhase: document.getElementById("resultPhase"),
+  endPhase: document.getElementById("endPhase"),
   playerScore: document.getElementById("playerScore"),
   botScore: document.getElementById("botScore"),
   authStatusText: document.getElementById("authStatusText"),
@@ -132,8 +152,18 @@ const el = {
   lobbyRoomText: document.getElementById("lobbyRoomText"),
   lobbyStatusText: document.getElementById("lobbyStatusText"),
   lobbyPlayersText: document.getElementById("lobbyPlayersText"),
+  roomHostText: document.getElementById("roomHostText"),
+  roomModeSelect: document.getElementById("roomModeSelect"),
+  pickTimeSettingGroup: document.getElementById("pickTimeSettingGroup"),
+  repeatCooldownSettingGroup: document.getElementById("repeatCooldownSettingGroup"),
+  pickSecondsSelect: document.getElementById("pickSecondsSelect"),
+  repeatCooldownSelect: document.getElementById("repeatCooldownSelect"),
+  saveRoomSettingsBtn: document.getElementById("saveRoomSettingsBtn"),
   lobbyReadyBtn: document.getElementById("lobbyReadyBtn"),
   lobbyPlayBtn: document.getElementById("lobbyPlayBtn"),
+  pickTimerBadge: document.getElementById("pickTimerBadge"),
+  pickTimerText: document.getElementById("pickTimerText"),
+  pickStatusText: document.getElementById("pickStatusText"),
   letterGrid: document.getElementById("letterGrid"),
   confirmLetterBtn: document.getElementById("confirmLetterBtn"),
   playerLetterLabel: document.getElementById("playerLetterLabel"),
@@ -154,11 +184,16 @@ const el = {
   resultPlayerWord: document.getElementById("resultPlayerWord"),
   resultBotWord: document.getElementById("resultBotWord"),
   resultSuggestions: document.getElementById("resultSuggestions"),
+  endFace: document.getElementById("endFace"),
+  endTitle: document.getElementById("endTitle"),
+  endMessage: document.getElementById("endMessage"),
+  endSubMessage: document.getElementById("endSubMessage"),
   nextRoundBtn: document.getElementById("nextRoundBtn"),
   backToStartBtns: document.querySelectorAll(".back-to-start-btn")
 };
 
 let supabaseClient = null;
+let roomSettingsAutosaveTimer = null;
 
 initialize();
 
@@ -191,6 +226,10 @@ function bindEvents() {
   });
 
   el.joinRoomBtn.addEventListener("click", joinMultiplayerRoom);
+  el.saveRoomSettingsBtn.addEventListener("click", saveRoomSettings);
+  el.roomModeSelect.addEventListener("change", onRoomSettingsInputChanged);
+  el.pickSecondsSelect.addEventListener("change", onRoomSettingsInputChanged);
+  el.repeatCooldownSelect.addEventListener("change", onRoomSettingsInputChanged);
   el.lobbyReadyBtn.addEventListener("click", toggleLobbyReady);
   el.lobbyPlayBtn.addEventListener("click", startLobbyRound);
   el.startBotGameBtn.addEventListener("click", startBotMode);
@@ -236,7 +275,7 @@ async function loginWithGoogle() {
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: OAUTH_REDIRECT_TO
+      redirectTo: "https://letterlock.vercel.app"
     }
   });
 
@@ -365,6 +404,12 @@ function connectSocket(roomCode) {
     state.roomCode = payload.roomCode;
     state.lobbyReadySocketIds = [];
     state.lobbyReadyUserIds = [];
+    state.hostSocketId = null;
+    state.roomSettings = {
+      mode: ROOM_MODES.PICK,
+      pickSeconds: 5,
+      repeatCooldownRounds: 2
+    };
     setPhase("lobby");
     renderLobby("Waiting for opponent to join...");
   });
@@ -373,10 +418,20 @@ function connectSocket(roomCode) {
     state.lobbyPlayers = payload.players || [];
     state.lobbyReadySocketIds = payload.readySocketIds || [];
     state.lobbyReadyUserIds = payload.readyUserIds || [];
+    state.hostSocketId = payload.hostSocketId || state.lobbyPlayers[0]?.socketId || null;
+    applyRoomSettingsFromServer(payload.settings);
     renderLobby(payload.status || "Room updated.");
   });
 
+  socket.on("pick-start", (payload) => {
+    state.opponentName = payload.opponentName || "Opponent";
+    startMultiplayerLetterPick(payload);
+  });
+
   socket.on("round-start", (payload) => {
+    clearPickCountdown();
+    state.pickSubmitted = false;
+    state.pickDisallowedLetters = [];
     state.lobbyReadySocketIds = [];
     state.lobbyReadyUserIds = [];
     state.roundPendingStart = true;
@@ -397,6 +452,17 @@ function connectSocket(roomCode) {
 
     renderScore();
     renderMultiplayerResult(payload);
+
+    const playerWonMatch = state.opponentScore <= 0;
+    const playerLostMatch = state.playerScore <= 0;
+    if (playerWonMatch || playerLostMatch) {
+      showEndScreen({
+        playerWon: playerWonMatch,
+        opponentName: state.opponentName || "Opponent"
+      });
+      return;
+    }
+
     setPhase("result");
   });
 
@@ -406,7 +472,14 @@ function connectSocket(roomCode) {
   });
 
   socket.on("room-error", (payload) => {
-    updateAuthStatus(payload.message || "Failed to join room.");
+    const message = payload.message || "Failed to join room.";
+    updateAuthStatus(message);
+
+    if (state.mode === "multiplayer" && state.phase === "lobby") {
+      renderLobby(message);
+      return;
+    }
+
     goBackToStart();
   });
 
@@ -422,6 +495,14 @@ function connectSocket(roomCode) {
 function renderLobby(statusText) {
   el.lobbyRoomText.textContent = `Room: ${state.roomCode || "-"}`;
   el.lobbyStatusText.textContent = statusText;
+
+   const host = state.lobbyPlayers.find((player) => player.socketId === state.hostSocketId);
+   el.roomHostText.textContent = host
+    ? `Host: ${host.username}${isSelfPlayer(host) ? " [You]" : ""}`
+    : "Host: -";
+
+  applyRoomSettingsToControls();
+
   if (!state.lobbyPlayers.length) {
     el.lobbyPlayersText.textContent = "";
     updateLobbyControls();
@@ -431,8 +512,9 @@ function renderLobby(statusText) {
   const names = state.lobbyPlayers
     .map((player) => {
       const isReady = isPlayerReadyInLobby(player);
+      const hostTag = player.socketId === state.hostSocketId ? " [Host]" : "";
       const youTag = isSelfPlayer(player) ? " [You]" : "";
-      return `${player.username}${youTag} (${isReady ? "Ready" : "Not ready"})`;
+      return `${player.username}${hostTag}${youTag} (${isReady ? "Ready" : "Not ready"})`;
     })
     .join(" vs ");
   el.lobbyPlayersText.textContent = `Players: ${names}`;
@@ -474,6 +556,11 @@ function prepareBotRound() {
   state.roundWordPools = { player: [], opponent: [] };
 
   el.confirmLetterBtn.disabled = true;
+  el.confirmLetterBtn.textContent = "Lock Letter";
+  el.pickTimerBadge.hidden = true;
+  el.pickTimerText.textContent = "0";
+  el.pickStatusText.hidden = true;
+  el.pickStatusText.textContent = "";
   el.inputHint.textContent = "";
   el.wordInput.value = "";
   el.wordInput.disabled = false;
@@ -481,13 +568,18 @@ function prepareBotRound() {
   el.wordInput.classList.remove("good", "bad", "shake");
   setBotStatus("Bot is waiting...");
 
-  [...el.letterGrid.children].forEach((btn) => btn.classList.remove("selected"));
+  [...el.letterGrid.children].forEach((btn) => {
+    btn.classList.remove("selected");
+    btn.disabled = false;
+  });
   setPhase("letter");
 }
 
 function goBackToStart() {
   clearAllTimers();
   disconnectSocket();
+  clearTimeout(roomSettingsAutosaveTimer);
+  roomSettingsAutosaveTimer = null;
 
   if (state.mode === "bot" && state.gameStarted) {
     state.lastDifficultyFaced = state.difficulty;
@@ -506,7 +598,25 @@ function goBackToStart() {
   state.lobbyPlayers = [];
   state.lobbyReadySocketIds = [];
   state.lobbyReadyUserIds = [];
+  state.hostSocketId = null;
+  state.roomSettings = {
+    mode: ROOM_MODES.PICK,
+    pickSeconds: 5,
+    repeatCooldownRounds: 2
+  };
+  state.pickDisallowedLetters = [];
+  state.pickSubmitted = false;
   state.opponentName = "Opponent";
+
+  el.pickStatusText.hidden = true;
+  el.pickStatusText.textContent = "";
+  el.pickTimerBadge.hidden = true;
+  el.pickTimerText.textContent = "0";
+  el.confirmLetterBtn.textContent = "Lock Letter";
+  [...el.letterGrid.children].forEach((btn) => {
+    btn.disabled = false;
+    btn.classList.remove("selected");
+  });
 
   renderScore();
   renderLastDifficulty();
@@ -546,13 +656,96 @@ function toggleLobbyReady() {
 }
 
 function startLobbyRound() {
-  if (!state.socket || !canPlayFromLobby()) {
+  if (!state.socket || !canPlayFromLobby() || !isSelfHost()) {
     return;
   }
 
   el.lobbyPlayBtn.disabled = true;
   state.socket.emit("play-round");
   renderLobby("Starting round...");
+}
+
+function saveRoomSettings() {
+  if (!state.socket || !isSelfHost()) {
+    return;
+  }
+
+  const previousSettings = { ...state.roomSettings };
+  const nextSettings = getRoomSettingsFromControls();
+
+  // Optimistic update so host sees instant feedback even on servers without ack support.
+  applyRoomSettingsFromServer(nextSettings);
+  renderLobby("Room settings saved.");
+
+  state.socket.emit("update-room-settings", nextSettings, (response) => {
+    if (!response) {
+      return;
+    }
+
+    if (response.ok) {
+      applyRoomSettingsFromServer(response.settings || nextSettings);
+      renderLobby("Room settings saved.");
+      return;
+    }
+
+    applyRoomSettingsFromServer(previousSettings);
+    renderLobby((response && response.message) || "Could not save room settings. Reverted.");
+  });
+}
+
+function onRoomSettingsInputChanged() {
+  updateRoomSettingFieldsVisibility();
+
+  if (!state.socket || !isSelfHost() || state.phase !== "lobby") {
+    return;
+  }
+
+  clearTimeout(roomSettingsAutosaveTimer);
+  roomSettingsAutosaveTimer = setTimeout(() => {
+    saveRoomSettings();
+  }, 350);
+}
+
+function getRoomSettingsFromControls() {
+  return {
+    mode: el.roomModeSelect.value === ROOM_MODES.RANDOM ? ROOM_MODES.RANDOM : ROOM_MODES.PICK,
+    pickSeconds: Math.max(3, Math.min(15, Math.floor(Number(el.pickSecondsSelect.value) || 5))),
+    repeatCooldownRounds: Math.max(0, Math.min(3, Math.floor(Number(el.repeatCooldownSelect.value) || 0)))
+  };
+}
+
+function applyRoomSettingsFromServer(settings) {
+  if (!settings || typeof settings !== "object") {
+    return;
+  }
+
+  state.roomSettings = {
+    mode: settings.mode === ROOM_MODES.RANDOM ? ROOM_MODES.RANDOM : ROOM_MODES.PICK,
+    pickSeconds: Number(settings.pickSeconds) || 5,
+    repeatCooldownRounds: Number(settings.repeatCooldownRounds) || 0
+  };
+}
+
+function applyRoomSettingsToControls() {
+  el.roomModeSelect.value = state.roomSettings.mode;
+  el.pickSecondsSelect.value = String(state.roomSettings.pickSeconds);
+  el.repeatCooldownSelect.value = String(state.roomSettings.repeatCooldownRounds);
+  updateRoomSettingFieldsVisibility();
+}
+
+function updateRoomSettingFieldsVisibility() {
+  const isRandomMode = el.roomModeSelect.value === ROOM_MODES.RANDOM;
+  el.pickTimeSettingGroup.hidden = isRandomMode;
+  el.repeatCooldownSettingGroup.hidden = isRandomMode;
+}
+
+function isSelfHost() {
+  const selfSocketId = state.socket?.id;
+  if (!selfSocketId || !state.hostSocketId) {
+    return false;
+  }
+
+  return selfSocketId === state.hostSocketId;
 }
 
 function isSelfReadyInLobby() {
@@ -601,13 +794,29 @@ function updateLobbyControls() {
   const hasOpponent = state.lobbyPlayers.length === 2;
   const selfReady = isSelfReadyInLobby();
   const allReady = canPlayFromLobby();
+  const selfIsHost = isSelfHost();
 
   el.lobbyReadyBtn.disabled = !hasOpponent;
   el.lobbyReadyBtn.textContent = selfReady ? "Unready" : "Ready";
-  el.lobbyPlayBtn.disabled = !allReady;
+  el.lobbyPlayBtn.textContent = selfIsHost ? "Play" : "Host starts game";
+  el.lobbyPlayBtn.disabled = !allReady || !selfIsHost;
+
+  const lockSettings = !selfIsHost || state.phase !== "lobby";
+  el.roomModeSelect.disabled = lockSettings;
+  el.pickSecondsSelect.disabled = lockSettings;
+  el.repeatCooldownSelect.disabled = lockSettings;
+  el.saveRoomSettingsBtn.disabled = lockSettings;
 }
 
 function selectPlayerLetter(letter, buttonElement) {
+  if (state.mode === "multiplayer" && state.pickSubmitted) {
+    return;
+  }
+
+  if (state.mode === "multiplayer" && state.pickDisallowedLetters.includes(letter)) {
+    return;
+  }
+
   state.playerLetter = letter;
   [...el.letterGrid.children].forEach((btn) => btn.classList.remove("selected"));
   buttonElement.classList.add("selected");
@@ -619,8 +828,110 @@ function lockPlayerLetter() {
     return;
   }
 
+  if (state.mode === "multiplayer") {
+    submitMultiplayerLetter();
+    return;
+  }
+
   state.opponentLetter = getRandomLetter(state.playerLetter);
   runRevealAnimation(() => beginChallengeRound("bot"));
+}
+
+function startMultiplayerLetterPick(payload) {
+  clearAllTimers();
+
+  state.mode = "multiplayer";
+  state.roundSettled = false;
+  state.pickSubmitted = false;
+  state.playerLetter = "";
+  state.opponentLetter = "";
+  const rawDisallowed = Array.isArray(payload.disallowedLetters)
+    ? payload.disallowedLetters
+    : String(payload.disallowedLetters || "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  state.pickDisallowedLetters = rawDisallowed
+    .map((entry) => String(entry).toUpperCase())
+    .filter((entry) => LETTERS.includes(entry));
+
+  [...el.letterGrid.children].forEach((btn) => {
+    const isDisabled = state.pickDisallowedLetters.includes(btn.textContent);
+    btn.classList.remove("selected");
+    btn.disabled = isDisabled;
+  });
+
+  el.confirmLetterBtn.disabled = true;
+  el.confirmLetterBtn.textContent = "Lock Letter";
+  el.pickTimerBadge.hidden = false;
+  el.pickTimerText.textContent = "0";
+  el.pickStatusText.hidden = false;
+  el.pickStatusText.textContent = "Choose a letter, then click Lock Letter.";
+
+  clearPickCountdown();
+  const pickSeconds = Number(payload.pickSeconds) || 5;
+  state.pickDeadlineMs = Date.now() + pickSeconds * 1000;
+  updatePickStatusText();
+
+  if (state.pickDisallowedLetters.length) {
+    el.pickStatusText.textContent += ` Cooldown letters: ${state.pickDisallowedLetters.join(", ")}.`;
+  }
+
+  state.pickTickId = setInterval(() => {
+    updatePickStatusText();
+    if (Date.now() >= state.pickDeadlineMs) {
+      clearPickCountdown();
+      if (!state.pickSubmitted) {
+        el.confirmLetterBtn.disabled = true;
+        el.pickStatusText.textContent = "Time is up. Random letter will be assigned if needed.";
+      }
+    }
+  }, 150);
+
+  setPhase("letter");
+}
+
+function submitMultiplayerLetter() {
+  if (!state.socket || state.pickSubmitted || !state.playerLetter) {
+    return;
+  }
+
+  state.socket.emit("submit-letter", { letter: state.playerLetter }, (response) => {
+    if (response && response.ok) {
+      return;
+    }
+
+    state.pickSubmitted = false;
+    el.confirmLetterBtn.disabled = false;
+    el.confirmLetterBtn.textContent = "Lock Letter";
+    el.pickStatusText.hidden = false;
+    el.pickStatusText.textContent = (response && response.message) || "Could not lock letter. Try again.";
+    updatePickStatusText();
+  });
+
+  state.pickSubmitted = true;
+  el.confirmLetterBtn.disabled = true;
+  el.confirmLetterBtn.textContent = "Locked";
+  el.pickStatusText.hidden = false;
+  el.pickStatusText.textContent = "Letter locked. Waiting for opponent...";
+}
+
+function updatePickStatusText() {
+  if (!state.pickDeadlineMs) {
+    return;
+  }
+
+  const secondsLeft = Math.max(0, Math.ceil((state.pickDeadlineMs - Date.now()) / 1000));
+  el.pickTimerText.textContent = String(secondsLeft);
+}
+
+function clearPickCountdown() {
+  if (state.pickTickId) {
+    clearInterval(state.pickTickId);
+  }
+  state.pickTickId = null;
+  state.pickDeadlineMs = null;
+  el.pickTimerText.textContent = "0";
 }
 
 function runRevealAnimation(onComplete) {
@@ -669,6 +980,7 @@ function beginChallengeRound(mode) {
   el.submitWordBtn.disabled = false;
   el.inputHint.textContent = "Enter a word with 4+ letters.";
   setBotStatus(mode === "bot" ? "Bot is thinking..." : `${state.opponentName} is thinking...`);
+  el.pickTimerBadge.hidden = true;
 
   setPhase("challenge");
   renderTimer();
@@ -758,16 +1070,16 @@ async function onPlayerSubmit(event) {
   el.submitWordBtn.disabled = true;
   el.inputHint.textContent = "Checking dictionary...";
 
-  let validWords = state.roundWordPools.player;
-  if (!validWords.length) {
-    validWords = await getValidWords(state.playerLetter, state.opponentLetter);
-  }
+  const valid = await isWordInApiOrFallback(
+    value.toLowerCase(),
+    state.playerLetter,
+    state.opponentLetter
+  );
 
   if (!isCurrentBotRound()) {
     return;
   }
 
-  const valid = validWords.includes(value.toLowerCase());
   if (!valid) {
     el.submitWordBtn.disabled = false;
     shakeInput();
@@ -875,12 +1187,22 @@ function settleBotRound() {
   const damage = getDamageFromWinner(winner);
   const gameOver = applyRoundDamage(winner, damage);
 
-  if (winner === "player" && damage > 0) {
+  if (winner === "player" && damage > 0 && !gameOver) {
     triggerConfetti();
   }
 
   renderScore();
   renderBotResult(winner, damage, gameOver);
+
+  if (gameOver) {
+    const playerWon = state.opponentScore <= 0;
+    showEndScreen({
+      playerWon,
+      opponentName: "Bot"
+    });
+    return;
+  }
+
   setPhase("result");
 }
 
@@ -953,7 +1275,8 @@ function renderMultiplayerResult(payload) {
 
   const picks = (payload.suggestions || []).slice(0, 2);
   if (!picks.length) {
-    el.resultSuggestions.textContent = `Possible words (${state.playerLetter}...${state.opponentLetter}): none found.`;
+    el.resultSuggestions.textContent = `Possible words (${state.playerLetter}...${state.opponentLetter}): loading...`;
+    renderRoundSuggestions();
   } else {
     el.resultSuggestions.textContent = `Possible words (${state.playerLetter}...${state.opponentLetter}): ${picks.join(", ")}`;
   }
@@ -1001,7 +1324,8 @@ function setPhase(nextPhase) {
     letter: el.letterPhase,
     reveal: el.revealPhase,
     challenge: el.challengePhase,
-    result: el.resultPhase
+    result: el.resultPhase,
+    end: el.endPhase
   };
 
   Object.entries(map).forEach(([phaseKey, section]) => {
@@ -1009,6 +1333,24 @@ function setPhase(nextPhase) {
     section.classList.toggle("active", isActive);
     section.setAttribute("aria-hidden", String(!isActive));
   });
+}
+
+function showEndScreen({ playerWon, opponentName }) {
+  const foe = opponentName || (state.mode === "bot" ? "Bot" : "your opponent");
+  el.endFace.textContent = playerWon ? ":-)" : ":-(";
+  el.endTitle.textContent = playerWon ? "Victory!" : "Keep Going!";
+  el.endMessage.textContent = playerWon
+    ? `Congratulations! You defeated ${foe}.`
+    : `You lost this match against ${foe}.`;
+  el.endSubMessage.textContent = playerWon
+    ? "Great focus and speed. Enjoy your win!"
+    : "Tough round. You can bounce back next match.";
+
+  if (playerWon) {
+    triggerConfetti();
+  }
+
+  setPhase("end");
 }
 
 function renderScore() {
@@ -1041,6 +1383,7 @@ function renderLastDifficulty() {
 function clearAllTimers() {
   clearInterval(state.timerTickId);
   state.timerTickId = null;
+  clearPickCountdown();
 
   state.pendingTimeouts.forEach((timerId) => {
     clearTimeout(timerId);
@@ -1106,7 +1449,7 @@ async function getValidWords(startLetter, endLetter) {
     }
 
     const data = await response.json();
-    const words = [...new Set(data
+    const apiWords = [...new Set(data
       .map((entry) => String(entry.word || "").toLowerCase())
       .filter((word) =>
         word.length >= 4 &&
@@ -1114,18 +1457,66 @@ async function getValidWords(startLetter, endLetter) {
         word.startsWith(start) &&
         word.endsWith(end)
       ))];
+    const fallbackWords = getFallbackWordsForPattern(start, end);
+    const words = [...new Set([...apiWords, ...fallbackWords])];
 
     wordCache.set(key, words);
     return words;
   } catch (error) {
-    const fallback = FALLBACK_WORDS.filter((word) =>
-      word.length >= 4 &&
-      word.startsWith(start) &&
-      word.endsWith(end)
-    );
+    const fallback = getFallbackWordsForPattern(start, end);
     wordCache.set(key, fallback);
     return fallback;
   }
+}
+
+async function isWordInApiOrFallback(word, startLetter, endLetter) {
+  const cleanWord = String(word || "").trim().toLowerCase();
+  const start = String(startLetter || "").toLowerCase();
+  const end = String(endLetter || "").toLowerCase();
+
+  if (!shapeIsValid(cleanWord, start, end)) {
+    return false;
+  }
+
+  const fallbackWords = getFallbackWordsForPattern(start, end);
+  if (fallbackWords.includes(cleanWord)) {
+    return true;
+  }
+
+  if (exactWordCache.has(cleanWord)) {
+    return exactWordCache.get(cleanWord);
+  }
+
+  try {
+    const exactUrl = `${DATAMUSE_URL}?sp=${encodeURIComponent(cleanWord)}&max=10`;
+    const response = await fetch(exactUrl);
+    if (response.ok) {
+      const data = await response.json();
+      const matched = data.some((entry) => String(entry.word || "").toLowerCase() === cleanWord);
+      if (matched) {
+        exactWordCache.set(cleanWord, true);
+        return true;
+      }
+    }
+  } catch (_error) {
+    // Fallback to cached pattern list below.
+  }
+
+  const words = await getValidWords(start, end);
+  const valid = words.includes(cleanWord);
+  exactWordCache.set(cleanWord, valid);
+  return valid;
+}
+
+function getFallbackWordsForPattern(start, end) {
+  return [...new Set(FALLBACK_WORDS
+    .map((word) => String(word || "").toLowerCase().trim())
+    .filter((word) =>
+      word.length >= 4 &&
+      /^[a-z]+$/.test(word) &&
+      word.startsWith(start) &&
+      word.endsWith(end)
+    ))];
 }
 
 function pickBotWord(validWords, strategy) {

@@ -112,6 +112,15 @@ p {
   margin-top: 1rem;
 }
 
+.room-settings {
+  margin-top: 0.9rem;
+}
+
+.room-settings .difficulty-select {
+  width: min(320px, 100%);
+  margin-bottom: 0.7rem;
+}
+
 .mode-panel h3 {
   margin-top: 0;
   margin-bottom: 0.55rem;
@@ -139,6 +148,24 @@ p {
   margin-bottom: 0;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.pick-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.15rem 0 0.45rem;
+  padding: 0.32rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #f7f9fd;
+  font-size: 0.85rem;
+  color: #1f2a3b;
+}
+
+.pick-timer strong {
+  font-size: 0.95rem;
+  color: var(--brand-dark);
 }
 
 .auth-status {
@@ -372,6 +399,23 @@ p {
   margin-bottom: 0.85rem;
   font-size: 0.92rem;
   color: var(--muted);
+}
+
+.end-face {
+  margin: 0.2rem 0 0.3rem;
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 0.06em;
+  font-size: clamp(3rem, 10vw, 4.2rem);
+  line-height: 1;
+  color: var(--brand);
+}
+
+#endPhase {
+  text-align: center;
+}
+
+#endPhase .panel-actions {
+  justify-content: center;
 }
 
 .confetti {
