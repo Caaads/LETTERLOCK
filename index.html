@@ -46,9 +46,10 @@
 
             <div class="mode-group">
               <label class="difficulty-label" for="roomCodeInput">Room Code (1v1)</label>
-              <div class="inline-row">
+              <div class="room-controls">
                 <input id="roomCodeInput" class="word-input" type="text" maxlength="8" placeholder="e.g. LOCK123" />
-                <button id="joinRoomBtn" class="btn btn-secondary">Join Room</button>
+                <button id="joinRoomBtn" class="btn btn-primary">Join Room</button>
+                <button id="instructionsBtn" class="btn btn-secondary">How to Play</button>
               </div>
               <p class="small-text">Type room code to join existing room or create a new one</p>
             </div>
@@ -99,6 +100,7 @@
             </div>
             <div class="panel-actions">
               <button id="saveRoomSettingsBtn" class="btn btn-secondary">Save Settings</button>
+              <button id="instructionsBtnLobby" class="btn btn-secondary">How to Play</button>
             </div>
           </div>
 
@@ -200,6 +202,41 @@
           </div>
         </section>
       </section>
+
+      <div id="instructionsModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+          <button class="modal-close-btn" aria-label="Close instructions">×</button>
+          <h2>How to Play LetterLock</h2>
+          
+          <h3>Objective</h3>
+          <p>Choose a letter and come up with valid words starting with that letter. Have more lives than your opponent when one of you runs out of words.</p>
+          
+          <h3>Game Flow</h3>
+          <ol>
+            <li><strong>Pick Phase:</strong> Choose a letter from A-Z within the time limit</li>
+            <li><strong>Reveal Phase:</strong> Your letter and your opponent's letter are revealed</li>
+            <li><strong>Challenge Phase:</strong> Type a valid word starting with your assigned letter before time runs out</li>
+            <li><strong>Result Phase:</strong> Compare words and see who loses a life</li>
+          </ol>
+          
+          <h3>Rules</h3>
+          <ul>
+            <li>Words must be at least 4 letters long</li>
+            <li>Words must be valid English words</li>
+            <li>Words cannot start with vowels (A, E, I, O, U) in harder modes</li>
+            <li>You lose a life if you can't submit a valid word or if your opponent's word is longer</li>
+            <li>Game ends when a player runs out of lives</li>
+          </ul>
+          
+          <h3>Tips</h3>
+          <ul>
+            <li>Plan common words for each letter beforehand</li>
+            <li>Type quickly to submit before the timer ends</li>
+            <li>Watch out for letter repetition based on cooldown settings</li>
+          </ul>
+        </div>
+      </div>
 
       <footer class="footer">
         <p class="footer-text">Developed by: Alfred Mari Cada</p>

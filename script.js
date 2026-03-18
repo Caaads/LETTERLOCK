@@ -189,7 +189,12 @@ const el = {
   endMessage: document.getElementById("endMessage"),
   endSubMessage: document.getElementById("endSubMessage"),
   nextRoundBtn: document.getElementById("nextRoundBtn"),
-  backToStartBtns: document.querySelectorAll(".back-to-start-btn")
+  backToStartBtns: document.querySelectorAll(".back-to-start-btn"),
+  instructionsBtn: document.getElementById("instructionsBtn"),
+  instructionsBtnLobby: document.getElementById("instructionsBtnLobby"),
+  instructionsModal: document.getElementById("instructionsModal"),
+  modalOverlay: document.querySelector(".modal-overlay"),
+  modalCloseBtn: document.querySelector(".modal-close-btn")
 };
 
 let supabaseClient = null;
@@ -238,6 +243,17 @@ function bindEvents() {
   el.wordInput.addEventListener("input", onPlayerInputPreview);
   el.nextRoundBtn.addEventListener("click", onNextRoundClick);
   el.backToStartBtns.forEach((btn) => btn.addEventListener("click", goBackToStart));
+  
+  // Instructions modal handlers
+  el.instructionsBtn.addEventListener("click", openInstructionsModal);
+  el.instructionsBtnLobby.addEventListener("click", openInstructionsModal);
+  el.modalCloseBtn.addEventListener("click", closeInstructionsModal);
+  el.modalOverlay.addEventListener("click", closeInstructionsModal);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && el.instructionsModal.classList.contains("active")) {
+      closeInstructionsModal();
+    }
+  });
 }
 
 function initializeSupabase() {
@@ -621,6 +637,14 @@ function goBackToStart() {
   renderScore();
   renderLastDifficulty();
   setPhase("start");
+}
+
+function openInstructionsModal() {
+  el.instructionsModal.classList.add("active");
+}
+
+function closeInstructionsModal() {
+  el.instructionsModal.classList.remove("active");
 }
 
 function disconnectSocket() {

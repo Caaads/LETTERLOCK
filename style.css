@@ -136,6 +136,18 @@ p {
   grid-template-columns: 1fr auto;
 }
 
+.inline-row-with-help {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr auto;
+}
+
+.room-controls {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr auto auto;
+}
+
 .guest-form {
   margin-top: 0.7rem;
   display: grid;
@@ -493,6 +505,8 @@ p {
   }
 
   .inline-row,
+  .inline-row-with-help,
+  .room-controls,
   .guest-form {
     grid-template-columns: 1fr;
   }
@@ -555,5 +569,134 @@ p {
   .social-link svg {
     width: 20px;
     height: 20px;
+  }
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.25rem;
+}
+
+.modal.active {
+  display: flex;
+  animation: modal-fade-in 200ms ease;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.modal-content {
+  position: relative;
+  background: var(--card);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(31, 40, 55, 0.08);
+  max-height: 85vh;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 600px;
+  padding: 2rem 1.5rem;
+  animation: modal-slide-in 300ms ease;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 150ms ease;
+}
+
+.modal-close-btn:hover {
+  color: var(--ink);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
+}
+
+.modal-content h3 {
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+.modal-content h3:first-of-type {
+  margin-top: 0;
+}
+
+.modal-content p,
+.modal-content ol,
+.modal-content ul {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.modal-content ol,
+.modal-content ul {
+  padding-left: 1.5rem;
+}
+
+.modal-content li {
+  margin: 0.4rem 0;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-content {
+    max-height: 90vh;
+    padding: 1.5rem 1.2rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.3rem;
+  }
+
+  .modal-content h3 {
+    font-size: 1rem;
   }
 }
