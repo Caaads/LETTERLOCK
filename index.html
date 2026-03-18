@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LetterLock - Word Battle</title>
-    <link rel="icon" type="image/png" sizes="46x46" href="favicon.png">
+    <link rel="icon" type="image/png" sizes="46x46" href="favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,26 +19,62 @@
         <header class="topbar">
           <h1 class="game-title">LetterLock</h1>
           <div class="scoreboard" aria-live="polite">
-            <span>Player: <strong id="playerScore">0</strong></span>
-            <span>Bot: <strong id="botScore">0</strong></span>
+            <span>You Lives: <strong id="playerScore">20</strong></span>
+            <span>Opponent Lives: <strong id="botScore">20</strong></span>
           </div>
         </header>
 
         <section id="startScreen" class="panel active">
           <h2>Word Battle Prototype</h2>
-          <p>
-            Pick your letter, race the bot, and submit a valid word first.
-          </p>
-          <p id="lastDifficultyText" class="last-difficulty" hidden></p>
+          <p>Log in first, then choose multiplayer room play or bot challenge.</p>
 
-          <label class="difficulty-label" for="difficultySelect">Bot Difficulty</label>
-          <select id="difficultySelect" class="difficulty-select">
-            <option value="easy">Easy</option>
-            <option value="medium" selected>Medium</option>
-            <option value="hard">Hard</option>
-          </select>
+          <div class="auth-card">
+            <p id="authStatusText" class="auth-status">Not authenticated</p>
+            <div class="panel-actions">
+              <button id="googleLoginBtn" class="btn btn-primary">Login using Google</button>
+              <button id="guestEntryBtn" class="btn btn-secondary">Enter as Guest</button>
+            </div>
+            <div id="guestForm" class="guest-form" hidden>
+              <input id="guestUsernameInput" class="word-input" type="text" maxlength="20" placeholder="Enter guest username" />
+              <button id="guestContinueBtn" class="btn btn-primary">Continue</button>
+            </div>
+          </div>
 
-          <button id="startGameBtn" class="btn btn-primary">Start Game</button>
+          <div id="modePanel" class="mode-panel" hidden>
+            <h3>Choose Mode</h3>
+            <p id="lastDifficultyText" class="last-difficulty" hidden></p>
+
+            <div class="mode-group">
+              <label class="difficulty-label" for="roomCodeInput">Room Code (1v1)</label>
+              <div class="inline-row">
+                <input id="roomCodeInput" class="word-input" type="text" maxlength="8" placeholder="e.g. LOCK123" />
+                <button id="joinRoomBtn" class="btn btn-secondary">Join Room</button>
+              </div>
+              <p class="small-text">You can share this code so a friend can join the same room.</p>
+            </div>
+
+            <div class="mode-group">
+              <label class="difficulty-label" for="difficultySelect">Or play vs bot</label>
+              <select id="difficultySelect" class="difficulty-select">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+              <button id="startBotGameBtn" class="btn btn-primary">Play vs Bot</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="lobbyPhase" class="panel" aria-hidden="true">
+          <h2>Multiplayer Lobby</h2>
+          <p id="lobbyRoomText">Room: -</p>
+          <p id="lobbyStatusText">Waiting for opponent...</p>
+          <p id="lobbyPlayersText" class="small-text"></p>
+          <div class="panel-actions">
+            <button id="lobbyReadyBtn" class="btn btn-primary" disabled>Ready</button>
+            <button id="lobbyPlayBtn" class="btn btn-secondary" disabled>Play</button>
+            <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
+          </div>
         </section>
 
         <section id="letterPhase" class="panel" aria-hidden="true">
@@ -46,10 +82,8 @@
           <p>Pick one letter from A to Z.</p>
           <div id="letterGrid" class="letter-grid" role="listbox" aria-label="Letter choices"></div>
           <div class="panel-actions">
-            <button id="confirmLetterBtn" class="btn btn-primary" disabled>
-              Lock Letter
-            </button>
-            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+            <button id="confirmLetterBtn" class="btn btn-primary" disabled>Lock Letter</button>
+            <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
           </div>
         </section>
 
@@ -57,17 +91,17 @@
           <h2>Round Reveal</h2>
           <div class="letters-display">
             <div class="letter-chip">
-              <span class="label">Your Letter</span>
+              <span id="playerLetterLabel" class="label">Your Letter</span>
               <strong id="revealPlayerLetter">A</strong>
             </div>
             <div class="letter-chip bot">
-              <span class="label">Bot Letter</span>
+              <span id="opponentLetterLabel" class="label">Opponent Letter</span>
               <strong id="revealBotLetter">?</strong>
             </div>
           </div>
           <p id="revealCountdown" class="countdown">3</p>
           <div class="panel-actions">
-            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+            <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
           </div>
         </section>
 
@@ -79,7 +113,7 @@
               <strong id="livePlayerLetter">A</strong>
             </div>
             <div class="letter-chip bot">
-              <span class="label">Bot Letter</span>
+              <span class="label">Opponent Letter</span>
               <strong id="liveBotLetter">E</strong>
             </div>
           </div>
@@ -90,22 +124,15 @@
             </div>
           </div>
 
-          <p id="botStatus" class="bot-status">Bot is thinking...</p>
+          <p id="botStatus" class="bot-status">Opponent is preparing...</p>
 
           <form id="wordForm" class="word-form" autocomplete="off">
-            <input
-              id="wordInput"
-              class="word-input"
-              type="text"
-              minlength="4"
-              placeholder="Type your word"
-              aria-label="Type your word"
-            />
+            <input id="wordInput" class="word-input" type="text" minlength="4" placeholder="Type your word" aria-label="Type your word" />
             <button id="submitWordBtn" class="btn btn-primary" type="submit">Submit</button>
           </form>
           <p id="inputHint" class="hint"></p>
           <div class="panel-actions">
-            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+            <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
           </div>
         </section>
 
@@ -118,23 +145,27 @@
               <strong id="resultPlayerWord">-</strong>
             </div>
             <div>
-              <span>Bot:</span>
+              <span>Opponent:</span>
               <strong id="resultBotWord">-</strong>
             </div>
           </div>
           <p id="resultSuggestions" class="result-suggestions"></p>
           <div class="panel-actions">
             <button id="nextRoundBtn" class="btn btn-secondary">Next Round</button>
-            <button id="backToStartBtn" class="btn btn-secondary">Back to Start</button>
+            <button class="btn btn-secondary back-to-start-btn">Back to Start</button>
           </div>
         </section>
       </section>
+
       <footer class="footer">
         <p class="footer-text">Developed by: Alfred Mari Cada</p>
-        <p class="footer-text">Multiplayer and Further updates are still ongoing, STAY LOCKED!</p>
+        <p class="footer-text">Now supports auth, multiplayer rooms, and bot mode.</p>
       </footer>
     </main>
 
+    <script src="app-config.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
   </body>
 </html>

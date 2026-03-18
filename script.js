@@ -1,5 +1,7 @@
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+﻿const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const ROUND_SECONDS = 15;
+const REVEAL_STEP_MS = 700;
+const STARTING_LIVES = 20;
 const DATAMUSE_URL = "https://api.datamuse.com/words";
 const DATAMUSE_MAX_RESULTS = 120;
 const wordCache = new Map();
@@ -41,91 +43,73 @@ const FALLBACK_WORDS = [
   "climate", "closet", "combine", "compete", "compose", "concrete", "console", "cottage", "course", "cradle",
   "create", "cruise", "curious", "damage", "dance", "debate", "decade", "declare", "delicate", "desire",
   "device", "dignity", "dispute", "dove", "dragline", "dream", "eagle", "earphone", "eclipse", "elegance",
-  "eliminate", "embarrass", "embrace", "empire", "enclave", "engine", "enhance", "enigma", "entire", "envelope",
-  "episode", "estate", "evening", "evolve", "example", "excite", "explore", "expose", "fabric", "famine",
-  "feature", "fierce", "figure", "finance", "flame", "flexible", "fortune", "fragile", "future", "garage",
-  "garden", "genuine", "glimpse", "globe", "grace", "grapple", "habitable", "haze", "heroine", "hologram",
-  "horizon", "humble", "ignite", "image", "improve", "include", "inspire", "invoice", "isolate", "jasmine",
-  "jungle", "justice", "kingdom", "knowledge", "language", "latitude", "league", "legend", "lifetime", "machine",
-  "manage", "marble", "measure", "message", "migrate", "miracle", "mobile", "molecule", "nature", "notable",
-  "observe", "octave", "offense", "online", "operate", "orange", "outcome", "palace", "parade", "passage",
-  "peace", "people", "phrase", "pinnacle", "pirate", "planet", "please", "posture", "prairie", "prepare",
-  "pursue", "quality", "quartz", "queue", "radiance", "range", "rapid", "realize", "referee", "rescue",
-  "resource", "rhythmic", "romance", "safeguard", "sample", "savage", "scheme", "science", "secure", "serene",
-  "service", "silence", "simple", "skylane", "solace", "source", "space", "sphere", "spiral", "stable",
-  "stature", "storage", "strange", "sunrise", "table", "talent", "teammate", "texture", "timelike", "tornado",
-  "topple", "treasure", "tribe", "turbine", "ultimate", "universe", "upgrade", "venture", "vintage", "visible",
-  "voyage", "warfare", "welcome", "where", "wildfire", "window", "witness", "xylophone", "yearn", "yodel",
-  "zealous", "zenlike", "zigzag", "zone",
-  "abacus", "abrasive", "abyss", "accelerate", "activate", "activate", "acquire", "address", "adjust", "admit",
-  "adventure", "advise", "affinity", "afternoon", "aftermath", "again", "aggregation", "algorithm", "alignment", "also",
-  "altitude", "amplify", "amplitude", "anaconda", "anchor", "annotate", "antenna", "aperture", "appliance", "application",
-  "argument", "arithmetic", "array", "artificial", "ascend", "aspect", "assemble", "assertion", "assimilate", "assistance",
-  "associated", "assume", "asymptote", "attribute", "austere", "automatic", "auxiliary", "availability", "average", "avoid",
-  "axis", "background", "backup", "balance", "bandwidth", "base", "baseline", "battery", "behind", "behave", "believe",
-  "below", "beyond", "bicycle", "binary", "bind", "biometric", "blade", "blank", "block", "blueprint", "body", "boil",
-  "both", "bottle", "bounce", "bound", "branch", "breakthrough", "brightness", "broadcast", "browser", "budget", "buffer",
-  "build", "bump", "bundle", "burst", "business", "byte", "calculate", "call", "camera", "cancel", "canvas", "captive",
-  "card", "care", "carry", "case", "catalyst", "category", "ceiling", "cell", "center", "certify", "chain", "chart",
-  "check", "choice", "circle", "circuit", "class", "clear", "client", "clock", "clone", "close", "cloud", "cluster",
-  "code", "coefficient", "cohesion", "coil", "collapse", "color", "column", "combine", "command", "comment", "commit",
-  "compare", "compile", "complete", "component", "composite", "compress", "compute", "concentrate", "concept", "conclusion",
-  "connect", "consent", "construct", "container", "contain", "context", "continue", "contract", "control", "converge",
-  "conversion", "convert", "coordinate", "copy", "core", "correlate", "count", "couple", "course", "coverage", "create",
-  "credit", "criteria", "crop", "curve", "cursor", "custom", "cycle", "data", "database", "debug", "declare", "default",
-  "define", "degree", "delay", "delete", "deliver", "density", "deploy", "deposit", "detection", "diffuse", "digital",
-  "dimension", "direction", "directory", "disable", "discovery", "distance", "distort", "distribute", "document", "domain",
-  "download", "draft", "draw", "drive", "duplicate", "duration", "dynamic", "earth", "echo", "edge", "edit", "element",
-  "else", "email", "empty", "encode", "end", "endpoint", "energy", "engine", "enhance", "enough", "enter", "entity",
-  "environment", "equal", "error", "escape", "estimate", "evaluation", "event", "example", "exchange", "execute", "exist",
-  "exit", "expand", "expect", "experience", "expert", "explain", "explicit", "explode", "export", "expose", "expression", "extend", "money", "monitor", "month", "moral", "motion", "move", "multiple", "multiply", "mutation", "myth", "narrative", "native", "nature", "navigate", "network", "neutral", "new", "next", "node", "noise", "nominal", "normal", "notion",
-  "novel", "null", "number", "object", "obscure", "observe", "obtain", "occur", "offer", "office", "offline", "offset",
-  "onion", "online", "only", "open", "operate", "opinion", "opponent", "option", "orange", "order", "organize",
-  "origin", "other", "output", "outside", "overall", "overlap", "overlay", "owner", "package", "page", "pair", "panel", "paradigm", "parameter", "parent", "part", "pass", "patch", "path", "pattern", "pause", "pay", "peak", "peer", "penalty", "people", "perceive", "perform", "period", "permission",
-  "persist", "personality", "perspective", "phase", "phone", "photo", "phrase", "physical", "pick", "picture",
-  "piece", "pipeline", "place", "plan", "platform", "play", "player", "please", "point", "policy", "port", "pose",
-  "position", "positive", "possible", "post", "potential", "power", "practice", "preference", "prepare", "present",
-  "pressure", "price", "primary", "prime", "print", "priority", "privacy", "private", "process", "produce", "product",
-  "production", "professional", "profile", "program", "progress", "project", "promise", "prompt", "proof", "property",
-  "protect", "protocol", "provider", "public", "pull", "purpose", "push", "quality", "quarter", "question", "queue",
+  "eliminate", "embarrass", "embrace", "empire", "enclave", "engine", "enhance", "enigma", "entire", "envelope"
 ];
 
 const state = {
+  phase: "start",
+  mode: null,
+  authType: null,
+  userId: null,
+  username: null,
+  supabaseReady: false,
   gameStarted: false,
   difficulty: "medium",
   lastDifficultyFaced: null,
-  playerScore: 0,
-  botScore: 0,
+  playerScore: STARTING_LIVES,
+  opponentScore: STARTING_LIVES,
   playerLetter: "",
-  botLetter: "",
+  opponentLetter: "",
   timerLeft: ROUND_SECONDS,
   timerTickId: null,
   timerEndMs: null,
-  phase: "start",
-  botStatus: "",
   roundSettled: false,
   playerSubmission: null,
-  botSubmission: null,
+  opponentSubmission: null,
   roundWordPools: {
     player: [],
-    bot: [],
-    loading: false,
-    error: false
+    opponent: []
   },
-  pendingTimeouts: []
+  pendingTimeouts: [],
+  socket: null,
+  roomCode: null,
+  lobbyPlayers: [],
+  lobbyReadySocketIds: [],
+  lobbyReadyUserIds: [],
+  opponentName: "Opponent",
+  roundPendingStart: false
 };
 
 const el = {
   startScreen: document.getElementById("startScreen"),
+  lobbyPhase: document.getElementById("lobbyPhase"),
   letterPhase: document.getElementById("letterPhase"),
   revealPhase: document.getElementById("revealPhase"),
   challengePhase: document.getElementById("challengePhase"),
   resultPhase: document.getElementById("resultPhase"),
-  startGameBtn: document.getElementById("startGameBtn"),
+  playerScore: document.getElementById("playerScore"),
+  botScore: document.getElementById("botScore"),
+  authStatusText: document.getElementById("authStatusText"),
+  googleLoginBtn: document.getElementById("googleLoginBtn"),
+  guestEntryBtn: document.getElementById("guestEntryBtn"),
+  guestForm: document.getElementById("guestForm"),
+  guestUsernameInput: document.getElementById("guestUsernameInput"),
+  guestContinueBtn: document.getElementById("guestContinueBtn"),
+  modePanel: document.getElementById("modePanel"),
+  roomCodeInput: document.getElementById("roomCodeInput"),
+  joinRoomBtn: document.getElementById("joinRoomBtn"),
   difficultySelect: document.getElementById("difficultySelect"),
+  startBotGameBtn: document.getElementById("startBotGameBtn"),
   lastDifficultyText: document.getElementById("lastDifficultyText"),
+  lobbyRoomText: document.getElementById("lobbyRoomText"),
+  lobbyStatusText: document.getElementById("lobbyStatusText"),
+  lobbyPlayersText: document.getElementById("lobbyPlayersText"),
+  lobbyReadyBtn: document.getElementById("lobbyReadyBtn"),
+  lobbyPlayBtn: document.getElementById("lobbyPlayBtn"),
   letterGrid: document.getElementById("letterGrid"),
   confirmLetterBtn: document.getElementById("confirmLetterBtn"),
+  playerLetterLabel: document.getElementById("playerLetterLabel"),
+  opponentLetterLabel: document.getElementById("opponentLetterLabel"),
   revealPlayerLetter: document.getElementById("revealPlayerLetter"),
   revealBotLetter: document.getElementById("revealBotLetter"),
   revealCountdown: document.getElementById("revealCountdown"),
@@ -143,26 +127,297 @@ const el = {
   resultBotWord: document.getElementById("resultBotWord"),
   resultSuggestions: document.getElementById("resultSuggestions"),
   nextRoundBtn: document.getElementById("nextRoundBtn"),
-  backToStartBtns: document.querySelectorAll("#backToStartBtn"),
-  playerScore: document.getElementById("playerScore"),
-  botScore: document.getElementById("botScore")
+  backToStartBtns: document.querySelectorAll(".back-to-start-btn")
 };
+
+let supabaseClient = null;
 
 initialize();
 
-function initialize() {
+async function initialize() {
   buildLetterGrid();
-
-  el.startGameBtn.addEventListener("click", startGame);
-  el.confirmLetterBtn.addEventListener("click", lockPlayerLetter);
-  el.wordForm.addEventListener("submit", onPlayerSubmit);
-  el.wordInput.addEventListener("input", onPlayerInputPreview);
-  el.nextRoundBtn.addEventListener("click", prepareRound);
-  el.backToStartBtns.forEach((btn) => btn.addEventListener("click", goBackToStart));
+  bindEvents();
+  initializeSupabase();
+  await recoverSupabaseSession();
 
   setPhase("start");
   renderScore();
   renderLastDifficulty();
+  updateAuthStatus();
+  updateModePanelVisibility();
+}
+
+function bindEvents() {
+  el.googleLoginBtn.addEventListener("click", loginWithGoogle);
+  el.guestEntryBtn.addEventListener("click", () => {
+    el.guestForm.hidden = false;
+    el.guestUsernameInput.focus();
+  });
+
+  el.guestContinueBtn.addEventListener("click", continueAsGuest);
+  el.guestUsernameInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      continueAsGuest();
+    }
+  });
+
+  el.joinRoomBtn.addEventListener("click", joinMultiplayerRoom);
+  el.lobbyReadyBtn.addEventListener("click", toggleLobbyReady);
+  el.lobbyPlayBtn.addEventListener("click", startLobbyRound);
+  el.startBotGameBtn.addEventListener("click", startBotMode);
+  el.confirmLetterBtn.addEventListener("click", lockPlayerLetter);
+  el.wordForm.addEventListener("submit", onPlayerSubmit);
+  el.wordInput.addEventListener("input", onPlayerInputPreview);
+  el.nextRoundBtn.addEventListener("click", onNextRoundClick);
+  el.backToStartBtns.forEach((btn) => btn.addEventListener("click", goBackToStart));
+}
+
+function initializeSupabase() {
+  const config = window.APP_CONFIG || {};
+  if (!window.supabase || !config.supabaseUrl || !config.supabaseAnonKey) {
+    state.supabaseReady = false;
+    return;
+  }
+
+  supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+  state.supabaseReady = true;
+}
+
+async function recoverSupabaseSession() {
+  if (!supabaseClient) {
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    console.error("Supabase session error", error);
+    return;
+  }
+
+  if (data.session?.user) {
+    applyAuthenticatedUser(data.session.user, "google");
+  }
+}
+
+async function loginWithGoogle() {
+  if (!supabaseClient) {
+    updateAuthStatus("Supabase not configured. Use guest mode or set app-config.js.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: window.location.origin
+    }
+  });
+
+  if (error) {
+    updateAuthStatus(`Google login failed: ${error.message}`);
+  }
+}
+
+function continueAsGuest() {
+  const username = sanitizeUsername(el.guestUsernameInput.value);
+  if (!username) {
+    updateAuthStatus("Enter a guest username first.");
+    return;
+  }
+
+  state.authType = "guest";
+  state.username = username;
+  state.userId = `guest_${username.toLowerCase()}`;
+  updateAuthStatus();
+  updateModePanelVisibility();
+}
+
+function applyAuthenticatedUser(user, type) {
+  const metaName = user.user_metadata?.full_name || user.user_metadata?.name;
+  const emailName = user.email ? user.email.split("@")[0] : "Player";
+  state.authType = type;
+  state.userId = user.id;
+  state.username = sanitizeUsername(metaName || emailName || "Player");
+  updateAuthStatus();
+  updateModePanelVisibility();
+}
+
+function updateAuthStatus(overrideText) {
+  if (overrideText) {
+    el.authStatusText.textContent = overrideText;
+    return;
+  }
+
+  if (!state.authType) {
+    el.authStatusText.textContent = "Not authenticated";
+    return;
+  }
+
+  const method = state.authType === "google" ? "Google" : "Guest";
+  el.authStatusText.textContent = `Signed in as ${state.username} (${method})`;
+}
+
+function updateModePanelVisibility() {
+  el.modePanel.hidden = !state.authType;
+}
+
+function sanitizeUsername(value) {
+  const clean = String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[^a-zA-Z0-9 _-]/g, "")
+    .slice(0, 20);
+  return clean;
+}
+
+function startBotMode() {
+  if (!state.authType) {
+    updateAuthStatus("Authenticate first before starting.");
+    return;
+  }
+
+  disconnectSocket();
+  state.mode = "bot";
+  state.gameStarted = true;
+  state.opponentName = "Bot";
+  state.difficulty = el.difficultySelect.value;
+  state.playerScore = STARTING_LIVES;
+  state.opponentScore = STARTING_LIVES;
+  renderScore();
+  prepareBotRound();
+}
+
+function joinMultiplayerRoom() {
+  if (!state.authType) {
+    updateAuthStatus("Authenticate first before joining a room.");
+    return;
+  }
+
+  if (typeof io !== "function") {
+    updateAuthStatus("Socket client not available. Start server first.");
+    return;
+  }
+
+  const code = String(el.roomCodeInput.value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
+
+  if (code.length < 4) {
+    updateAuthStatus("Room code must be at least 4 characters.");
+    return;
+  }
+
+  state.mode = "multiplayer";
+  state.gameStarted = true;
+  state.playerScore = STARTING_LIVES;
+  state.opponentScore = STARTING_LIVES;
+  renderScore();
+
+  connectSocket(code);
+}
+
+function connectSocket(roomCode) {
+  disconnectSocket();
+
+  const socket = io();
+  state.socket = socket;
+
+  socket.on("connect", () => {
+    socket.emit("join-room", {
+      roomCode,
+      username: state.username,
+      userId: state.userId
+    });
+  });
+
+  socket.on("join-success", (payload) => {
+    state.roomCode = payload.roomCode;
+    state.lobbyReadySocketIds = [];
+    state.lobbyReadyUserIds = [];
+    setPhase("lobby");
+    renderLobby("Waiting for opponent to join...");
+  });
+
+  socket.on("room-update", (payload) => {
+    state.lobbyPlayers = payload.players || [];
+    state.lobbyReadySocketIds = payload.readySocketIds || [];
+    state.lobbyReadyUserIds = payload.readyUserIds || [];
+    renderLobby(payload.status || "Room updated.");
+  });
+
+  socket.on("round-start", (payload) => {
+    state.lobbyReadySocketIds = [];
+    state.lobbyReadyUserIds = [];
+    state.roundPendingStart = true;
+    state.playerLetter = payload.playerLetter;
+    state.opponentLetter = payload.opponentLetter;
+    state.opponentName = payload.opponentName || "Opponent";
+    runRevealAnimation(() => beginChallengeRound("multiplayer"));
+  });
+
+  socket.on("round-result", (payload) => {
+    state.roundSettled = true;
+    clearInterval(state.timerTickId);
+    state.timerTickId = null;
+    state.playerScore = typeof payload.youLives === "number" ? payload.youLives : payload.youScore;
+    state.opponentScore = typeof payload.opponentLives === "number" ? payload.opponentLives : payload.opponentScore;
+    state.playerSubmission = payload.youWord ? { word: payload.youWord, valid: true } : null;
+    state.opponentSubmission = payload.opponentWord ? { word: payload.opponentWord, valid: true } : null;
+
+    renderScore();
+    renderMultiplayerResult(payload);
+    setPhase("result");
+  });
+
+  socket.on("round-waiting", (payload) => {
+    setPhase("lobby");
+    renderLobby(payload.status || "Waiting for opponent...");
+  });
+
+  socket.on("room-error", (payload) => {
+    updateAuthStatus(payload.message || "Failed to join room.");
+    goBackToStart();
+  });
+
+  socket.on("disconnect", () => {
+    if (state.mode === "multiplayer") {
+      setBotStatus("Disconnected from room.");
+      setPhase("lobby");
+      renderLobby("Connection lost. Rejoin room from start.");
+    }
+  });
+}
+
+function renderLobby(statusText) {
+  el.lobbyRoomText.textContent = `Room: ${state.roomCode || "-"}`;
+  el.lobbyStatusText.textContent = statusText;
+  if (!state.lobbyPlayers.length) {
+    el.lobbyPlayersText.textContent = "";
+    updateLobbyControls();
+    return;
+  }
+
+  const names = state.lobbyPlayers
+    .map((player) => {
+      const isReady = isPlayerReadyInLobby(player);
+      const youTag = isSelfPlayer(player) ? " [You]" : "";
+      return `${player.username}${youTag} (${isReady ? "Ready" : "Not ready"})`;
+    })
+    .join(" vs ");
+  el.lobbyPlayersText.textContent = `Players: ${names}`;
+  updateLobbyControls();
+}
+
+function onNextRoundClick() {
+  if (state.mode === "multiplayer") {
+    setPhase("lobby");
+    renderLobby("Click Ready when you are set, then press Play.");
+    return;
+  }
+
+  prepareBotRound();
 }
 
 function buildLetterGrid() {
@@ -177,31 +432,17 @@ function buildLetterGrid() {
   });
 }
 
-function startGame() {
-  state.gameStarted = true;
-  state.playerScore = 0;
-  state.botScore = 0;
-  state.difficulty = el.difficultySelect.value;
-  renderScore();
-  prepareRound();
-}
-
-function prepareRound() {
+function prepareBotRound() {
   clearAllTimers();
 
   state.playerLetter = "";
-  state.botLetter = "";
+  state.opponentLetter = "";
   state.timerLeft = ROUND_SECONDS;
   state.phase = "letter";
   state.roundSettled = false;
   state.playerSubmission = null;
-  state.botSubmission = null;
-  state.roundWordPools = {
-    player: [],
-    bot: [],
-    loading: false,
-    error: false
-  };
+  state.opponentSubmission = null;
+  state.roundWordPools = { player: [], opponent: [] };
 
   el.confirmLetterBtn.disabled = true;
   el.inputHint.textContent = "";
@@ -217,27 +458,115 @@ function prepareRound() {
 
 function goBackToStart() {
   clearAllTimers();
+  disconnectSocket();
 
-  if (state.gameStarted) {
+  if (state.mode === "bot" && state.gameStarted) {
     state.lastDifficultyFaced = state.difficulty;
   }
 
+  state.mode = null;
   state.gameStarted = false;
   state.roundSettled = true;
-  state.playerScore = 0;
-  state.botScore = 0;
+  state.playerScore = STARTING_LIVES;
+  state.opponentScore = STARTING_LIVES;
   state.playerSubmission = null;
-  state.botSubmission = null;
+  state.opponentSubmission = null;
   state.playerLetter = "";
-  state.botLetter = "";
-
-  if (state.lastDifficultyFaced) {
-    el.difficultySelect.value = state.lastDifficultyFaced;
-  }
+  state.opponentLetter = "";
+  state.roomCode = null;
+  state.lobbyPlayers = [];
+  state.lobbyReadySocketIds = [];
+  state.lobbyReadyUserIds = [];
+  state.opponentName = "Opponent";
 
   renderScore();
   renderLastDifficulty();
   setPhase("start");
+}
+
+function disconnectSocket() {
+  if (state.socket) {
+    state.socket.disconnect();
+  }
+  state.socket = null;
+}
+
+function toggleLobbyReady() {
+  if (!state.socket || state.lobbyPlayers.length < 2) {
+    return;
+  }
+
+  const nextReady = !isSelfReadyInLobby();
+  state.socket.emit("set-ready", { ready: nextReady });
+
+  // Compatibility path for older servers that only understand round-ready.
+  if (nextReady) {
+    state.socket.emit("round-ready");
+  }
+
+  renderLobby(nextReady ? "Marking you as ready..." : "Marking you as not ready...");
+}
+
+function startLobbyRound() {
+  if (!state.socket || !canPlayFromLobby()) {
+    return;
+  }
+
+  el.lobbyPlayBtn.disabled = true;
+  state.socket.emit("play-round");
+  renderLobby("Starting round...");
+}
+
+function isSelfReadyInLobby() {
+  const selfPlayer = state.lobbyPlayers.find((player) => isSelfPlayer(player));
+  if (!selfPlayer) {
+    return false;
+  }
+
+  return isPlayerReadyInLobby(selfPlayer);
+}
+
+function canPlayFromLobby() {
+  if (state.lobbyPlayers.length < 2) {
+    return false;
+  }
+
+  return state.lobbyPlayers.every((player) => isPlayerReadyInLobby(player));
+}
+
+function isSelfPlayer(player) {
+  if (!player) {
+    return false;
+  }
+
+  const selfSocketId = state.socket?.id;
+  if (selfSocketId && player.socketId === selfSocketId) {
+    return true;
+  }
+
+  return Boolean(player.userId) && player.userId === state.userId;
+}
+
+function isPlayerReadyInLobby(player) {
+  if (!player) {
+    return false;
+  }
+
+  if (player.socketId && state.lobbyReadySocketIds.includes(player.socketId)) {
+    return true;
+  }
+
+  return Boolean(player.userId) && state.lobbyReadyUserIds.includes(player.userId);
+}
+
+function updateLobbyControls() {
+  const hasOpponent = state.lobbyPlayers.length === 2;
+  const selfReady = isSelfReadyInLobby();
+  const allReady = canPlayFromLobby();
+
+  el.lobbyReadyBtn.disabled = !hasOpponent;
+  el.lobbyReadyBtn.textContent = selfReady ? "Unready" : "Ready";
+  el.lobbyPlayBtn.disabled = !allReady;
 }
 
 function selectPlayerLetter(letter, buttonElement) {
@@ -252,12 +581,14 @@ function lockPlayerLetter() {
     return;
   }
 
-  state.botLetter = getRandomBotLetter(state.playerLetter);
-  runRevealAnimation();
+  state.opponentLetter = getRandomLetter(state.playerLetter);
+  runRevealAnimation(() => beginChallengeRound("bot"));
 }
 
-function runRevealAnimation() {
+function runRevealAnimation(onComplete) {
   setPhase("reveal");
+  el.playerLetterLabel.textContent = "Your Letter";
+  el.opponentLetterLabel.textContent = state.mode === "bot" ? "Bot Letter" : `${state.opponentName} Letter`;
   el.revealPlayerLetter.textContent = state.playerLetter;
   el.revealBotLetter.textContent = "?";
 
@@ -273,37 +604,43 @@ function runRevealAnimation() {
     }
 
     clearInterval(countdownId);
-    el.revealBotLetter.textContent = state.botLetter;
+    el.revealBotLetter.textContent = state.opponentLetter;
     el.revealCountdown.textContent = "Fight!";
 
-    const timeoutId = setTimeout(() => beginChallengeRound(), 700);
+    const timeoutId = setTimeout(onComplete, REVEAL_STEP_MS);
     state.pendingTimeouts.push(timeoutId);
-  }, 700);
+  }, REVEAL_STEP_MS);
 
   state.pendingTimeouts.push(countdownId);
 }
 
-function beginChallengeRound() {
+function beginChallengeRound(mode) {
   state.phase = "challenge";
+  state.mode = mode;
   state.timerLeft = ROUND_SECONDS;
   state.timerEndMs = Date.now() + ROUND_SECONDS * 1000;
+  state.roundSettled = false;
+  state.playerSubmission = null;
+  state.opponentSubmission = null;
 
   el.livePlayerLetter.textContent = state.playerLetter;
-  el.liveBotLetter.textContent = state.botLetter;
+  el.liveBotLetter.textContent = state.opponentLetter;
   el.wordInput.value = "";
   el.wordInput.focus();
   el.wordInput.disabled = false;
   el.submitWordBtn.disabled = false;
   el.inputHint.textContent = "Enter a word with 4+ letters.";
-  setBotStatus("Bot is thinking...");
+  setBotStatus(mode === "bot" ? "Bot is thinking..." : `${state.opponentName} is thinking...`);
 
   setPhase("challenge");
   renderTimer();
 
-  primeRoundWordPools();
+  if (mode === "bot") {
+    primeRoundWordPools();
+    scheduleBotAttempt();
+  }
 
   state.timerTickId = setInterval(updateTimer, 100);
-  scheduleBotAttempt();
 }
 
 function updateTimer() {
@@ -311,8 +648,20 @@ function updateTimer() {
   state.timerLeft = msLeft / 1000;
   renderTimer();
 
-  if (msLeft <= 0) {
-    settleRound("time");
+  if (msLeft > 0) {
+    return;
+  }
+
+  clearInterval(state.timerTickId);
+  state.timerTickId = null;
+
+  if (state.mode === "bot") {
+    settleBotRound("time");
+  } else {
+    state.roundSettled = true;
+    el.wordInput.disabled = true;
+    el.submitWordBtn.disabled = true;
+    el.inputHint.textContent = "Waiting for server result...";
   }
 }
 
@@ -336,11 +685,11 @@ function onPlayerInputPreview() {
     return;
   }
 
-  const shapeValid = shapeIsValid(value, state.playerLetter, state.botLetter);
+  const shapeValid = shapeIsValid(value, state.playerLetter, state.opponentLetter);
   el.wordInput.classList.add(shapeValid ? "good" : "bad");
   el.inputHint.textContent = shapeValid
     ? "Pattern looks valid. Submit now."
-    : `Must start with ${state.playerLetter} and end with ${state.botLetter}.`;
+    : `Must start with ${state.playerLetter} and end with ${state.opponentLetter}.`;
 }
 
 async function onPlayerSubmit(event) {
@@ -352,14 +701,19 @@ async function onPlayerSubmit(event) {
 
   const value = el.wordInput.value.trim();
   const submittedAt = Date.now();
-  const startLetter = state.playerLetter;
-  const endLetter = state.botLetter;
 
-  if (!shapeIsValid(value, startLetter, endLetter)) {
-    el.wordInput.classList.remove("shake");
-    void el.wordInput.offsetWidth;
-    el.wordInput.classList.add("bad", "shake");
-    el.inputHint.textContent = `Invalid word. Use 4+ letters, start ${startLetter}, end ${endLetter}.`;
+  if (!shapeIsValid(value, state.playerLetter, state.opponentLetter)) {
+    shakeInput();
+    el.inputHint.textContent = `Invalid shape. Must be ${state.playerLetter}...${state.opponentLetter}.`;
+    return;
+  }
+
+  if (state.mode === "multiplayer") {
+    state.playerSubmission = { word: value, valid: true, timestamp: submittedAt };
+    el.wordInput.disabled = true;
+    el.submitWordBtn.disabled = true;
+    setBotStatus("Submitted. Waiting for opponent...");
+    state.socket?.emit("round-submit", { word: value });
     return;
   }
 
@@ -368,21 +722,18 @@ async function onPlayerSubmit(event) {
 
   let validWords = state.roundWordPools.player;
   if (!validWords.length) {
-    validWords = await getValidWords(startLetter, endLetter);
+    validWords = await getValidWords(state.playerLetter, state.opponentLetter);
   }
 
-  if (!isCurrentRound(startLetter, endLetter)) {
+  if (!isCurrentBotRound()) {
     return;
   }
 
   const valid = validWords.includes(value.toLowerCase());
-
   if (!valid) {
     el.submitWordBtn.disabled = false;
-    el.wordInput.classList.remove("shake");
-    void el.wordInput.offsetWidth;
-    el.wordInput.classList.add("bad", "shake");
-    el.inputHint.textContent = `Not found in dictionary. Keep ${startLetter}...${endLetter}.`;
+    shakeInput();
+    el.inputHint.textContent = "Not found in dictionary.";
     return;
   }
 
@@ -398,14 +749,17 @@ async function onPlayerSubmit(event) {
   el.wordInput.classList.add("good");
   el.inputHint.textContent = "Valid submit locked.";
 
-  maybeAutoSettle();
+  maybeAutoSettleBotRound();
+}
+
+function shakeInput() {
+  el.wordInput.classList.remove("shake");
+  void el.wordInput.offsetWidth;
+  el.wordInput.classList.add("bad", "shake");
 }
 
 function scheduleBotAttempt() {
   const settings = DIFFICULTIES[state.difficulty];
-  const startLetter = state.botLetter;
-  const endLetter = state.playerLetter;
-
   let thinkingDelay = randomInt(settings.minDelay, settings.maxDelay);
   let failChance = settings.failChance;
 
@@ -415,50 +769,48 @@ function scheduleBotAttempt() {
   }
 
   const thinkingTimer = setTimeout(async () => {
-    if (state.roundSettled || state.phase !== "challenge") {
+    if (!isCurrentBotRound()) {
       return;
     }
 
-    let validWords = state.roundWordPools.bot;
+    let validWords = state.roundWordPools.opponent;
     if (!validWords.length) {
       setBotStatus("Bot is checking words...");
-      validWords = await getValidWords(startLetter, endLetter);
+      validWords = await getValidWords(state.opponentLetter, state.playerLetter);
     }
 
-    if (!isCurrentRound(endLetter, startLetter)) {
+    if (!isCurrentBotRound()) {
       return;
     }
 
     if (!validWords.length || Math.random() < failChance) {
       setBotStatus("I got nothing...");
-      state.botSubmission = {
+      state.opponentSubmission = {
         word: "",
         valid: false,
         timestamp: Date.now()
       };
-      maybeAutoSettle();
+      maybeAutoSettleBotRound();
       return;
     }
 
     const chosenWord = pickBotWord(validWords, settings.strategy);
-
     setBotStatus("Bot is typing...");
-    const typingDelay = Math.max(450, chosenWord.length * 120);
 
     const typingTimer = setTimeout(() => {
-      if (state.roundSettled || state.phase !== "challenge") {
+      if (!isCurrentBotRound()) {
         return;
       }
 
-      state.botSubmission = {
+      state.opponentSubmission = {
         word: chosenWord,
         valid: true,
         timestamp: Date.now()
       };
 
       setBotStatus("Bot submitted!");
-      maybeAutoSettle();
-    }, typingDelay);
+      maybeAutoSettleBotRound();
+    }, Math.max(450, chosenWord.length * 120));
 
     state.pendingTimeouts.push(typingTimer);
   }, thinkingDelay);
@@ -466,17 +818,13 @@ function scheduleBotAttempt() {
   state.pendingTimeouts.push(thinkingTimer);
 }
 
-function maybeAutoSettle() {
-  if (state.roundSettled) {
-    return;
-  }
-
-  if (state.playerSubmission && state.botSubmission) {
-    settleRound("both-finished");
+function maybeAutoSettleBotRound() {
+  if (state.playerSubmission && state.opponentSubmission) {
+    settleBotRound("both-finished");
   }
 }
 
-function settleRound(reason) {
+function settleBotRound() {
   if (state.roundSettled) {
     return;
   }
@@ -485,66 +833,97 @@ function settleRound(reason) {
   clearInterval(state.timerTickId);
   state.timerTickId = null;
 
-  const winner = determineWinner();
+  const winner = determineWinnerFromSubmissions();
+  const damage = getDamageFromWinner(winner);
+  const gameOver = applyRoundDamage(winner, damage);
 
-  if (winner === "player") {
-    state.playerScore += 1;
+  if (winner === "player" && damage > 0) {
     triggerConfetti();
-  } else if (winner === "bot") {
-    state.botScore += 1;
   }
 
   renderScore();
-  renderResult(winner, reason);
+  renderBotResult(winner, damage, gameOver);
   setPhase("result");
 }
 
-function determineWinner() {
-  const p = state.playerSubmission;
-  const b = state.botSubmission;
-
-  if (p && p.valid && b && b.valid) {
-    if (p.timestamp < b.timestamp) {
-      return "player";
-    }
-    if (b.timestamp < p.timestamp) {
-      return "bot";
-    }
-    return "none";
+function getDamageFromWinner(winner) {
+  if (winner === "player") {
+    return getDamageFromWord(state.playerSubmission?.word);
   }
 
-  if (p && p.valid && (!b || !b.valid)) {
+  if (winner === "opponent") {
+    return getDamageFromWord(state.opponentSubmission?.word);
+  }
+
+  return 0;
+}
+
+function applyRoundDamage(winner, damage) {
+  if (damage <= 0 || winner === "none") {
+    return false;
+  }
+
+  if (winner === "player") {
+    state.opponentScore = Math.max(0, state.opponentScore - damage);
+    return state.opponentScore <= 0;
+  }
+
+  state.playerScore = Math.max(0, state.playerScore - damage);
+  return state.playerScore <= 0;
+}
+
+function determineWinnerFromSubmissions() {
+  const p = state.playerSubmission;
+  const o = state.opponentSubmission;
+
+  if (p && p.valid && o && o.valid) {
+    return p.timestamp < o.timestamp ? "player" : "opponent";
+  }
+
+  if (p && p.valid && (!o || !o.valid)) {
     return "player";
   }
 
-  if (b && b.valid && (!p || !p.valid)) {
-    return "bot";
+  if (o && o.valid && (!p || !p.valid)) {
+    return "opponent";
   }
 
   return "none";
 }
 
-function renderResult(winner) {
-  const playerWord = state.playerSubmission?.word || "No valid word";
-  const botWord = state.botSubmission?.word || "No valid word";
-
-  el.resultPlayerWord.textContent = playerWord;
-  el.resultBotWord.textContent = botWord;
+function renderBotResult(winner, damage, gameOver) {
+  el.resultPlayerWord.textContent = state.playerSubmission?.word || "No valid word";
+  el.resultBotWord.textContent = state.opponentSubmission?.word || "No valid word";
 
   if (winner === "player") {
-    el.winnerText.textContent = "You won the round! +1 point";
-  } else if (winner === "bot") {
-    el.winnerText.textContent = "Bot won the round! +1 point";
+    const koSuffix = gameOver ? " Bot is out of lives." : "";
+    el.winnerText.textContent = `You hit Bot for ${damage} damage.${koSuffix}`;
+  } else if (winner === "opponent") {
+    const koSuffix = gameOver ? " You are out of lives." : "";
+    el.winnerText.textContent = `Bot hit you for ${damage} damage.${koSuffix}`;
   } else {
-    el.winnerText.textContent = "No points this round.";
+    el.winnerText.textContent = "No damage this round.";
   }
 
   renderRoundSuggestions();
 }
 
+function renderMultiplayerResult(payload) {
+  el.resultPlayerWord.textContent = payload.youWord || "No valid word";
+  el.resultBotWord.textContent = payload.opponentWord || "No valid word";
+  el.winnerText.textContent = payload.resultText || "Round finished.";
+
+  const picks = (payload.suggestions || []).slice(0, 2);
+  if (!picks.length) {
+    el.resultSuggestions.textContent = `Possible words (${state.playerLetter}...${state.opponentLetter}): none found.`;
+  } else {
+    el.resultSuggestions.textContent = `Possible words (${state.playerLetter}...${state.opponentLetter}): ${picks.join(", ")}`;
+  }
+}
+
 async function renderRoundSuggestions() {
   const startLetter = state.playerLetter;
-  const endLetter = state.botLetter;
+  const endLetter = state.opponentLetter;
 
   el.resultSuggestions.textContent = `Possible words (${startLetter}...${endLetter}): loading...`;
 
@@ -553,7 +932,7 @@ async function renderRoundSuggestions() {
     words = await getValidWords(startLetter, endLetter);
   }
 
-  if (state.phase !== "result" || state.playerLetter !== startLetter || state.botLetter !== endLetter) {
+  if (state.phase !== "result" || state.playerLetter !== startLetter || state.opponentLetter !== endLetter) {
     return;
   }
 
@@ -569,37 +948,18 @@ async function renderRoundSuggestions() {
 function pickSuggestionWords(words) {
   const unique = [...new Set(words.map((word) => word.toLowerCase()))];
   const shuffled = [...unique].sort(() => Math.random() - 0.5);
-  const picked = shuffled.slice(0, Math.min(2, shuffled.length));
-  return picked;
-}
-
-function renderScore() {
-  el.playerScore.textContent = String(state.playerScore);
-  el.botScore.textContent = String(state.botScore);
-}
-
-function renderLastDifficulty() {
-  if (!state.lastDifficultyFaced) {
-    el.lastDifficultyText.hidden = true;
-    el.lastDifficultyText.textContent = "";
-    return;
-  }
-
-  const difficultyLabel = DIFFICULTIES[state.lastDifficultyFaced]?.label || state.lastDifficultyFaced;
-  el.lastDifficultyText.hidden = false;
-  el.lastDifficultyText.textContent = `Last opponent: ${difficultyLabel} Bot`;
+  return shuffled.slice(0, Math.min(2, shuffled.length));
 }
 
 function setBotStatus(text) {
-  state.botStatus = text;
   el.botStatus.textContent = text;
 }
 
 function setPhase(nextPhase) {
   state.phase = nextPhase;
-
   const map = {
     start: el.startScreen,
+    lobby: el.lobbyPhase,
     letter: el.letterPhase,
     reveal: el.revealPhase,
     challenge: el.challengePhase,
@@ -611,6 +971,33 @@ function setPhase(nextPhase) {
     section.classList.toggle("active", isActive);
     section.setAttribute("aria-hidden", String(!isActive));
   });
+}
+
+function renderScore() {
+  el.playerScore.textContent = String(state.playerScore);
+  el.botScore.textContent = String(state.opponentScore);
+}
+
+function getDamageFromWord(word) {
+  const clean = String(word || "").trim();
+  if (clean.length < 4) {
+    return 0;
+  }
+
+  // 4-5 letters: 1 damage, 6-7: 2, 8-9: 3, etc., capped for balance.
+  return Math.max(1, Math.min(8, 1 + Math.floor((clean.length - 4) / 2)));
+}
+
+function renderLastDifficulty() {
+  if (!state.lastDifficultyFaced) {
+    el.lastDifficultyText.hidden = true;
+    el.lastDifficultyText.textContent = "";
+    return;
+  }
+
+  const label = DIFFICULTIES[state.lastDifficultyFaced]?.label || state.lastDifficultyFaced;
+  el.lastDifficultyText.hidden = false;
+  el.lastDifficultyText.textContent = `Last bot difficulty: ${label}`;
 }
 
 function clearAllTimers() {
@@ -625,7 +1012,7 @@ function clearAllTimers() {
   state.pendingTimeouts = [];
 }
 
-function getRandomBotLetter(excludeLetter) {
+function getRandomLetter(excludeLetter) {
   const choices = LETTERS.filter((letter) => letter !== excludeLetter);
   return choices[Math.floor(Math.random() * choices.length)];
 }
@@ -639,33 +1026,27 @@ function shapeIsValid(word, startLetter, endLetter) {
   );
 }
 
+function isCurrentBotRound() {
+  return state.phase === "challenge" && !state.roundSettled && state.mode === "bot";
+}
+
 async function primeRoundWordPools() {
-  state.roundWordPools.loading = true;
-  state.roundWordPools.error = false;
-
   const playerStart = state.playerLetter;
-  const playerEnd = state.botLetter;
-  const botStart = state.botLetter;
-  const botEnd = state.playerLetter;
+  const playerEnd = state.opponentLetter;
+  const opponentStart = state.opponentLetter;
+  const opponentEnd = state.playerLetter;
 
-  try {
-    const [playerWords, botWords] = await Promise.all([
-      getValidWords(playerStart, playerEnd),
-      getValidWords(botStart, botEnd)
-    ]);
+  const [playerWords, opponentWords] = await Promise.all([
+    getValidWords(playerStart, playerEnd),
+    getValidWords(opponentStart, opponentEnd)
+  ]);
 
-    if (!isCurrentRound(playerStart, playerEnd)) {
-      return;
-    }
-
-    state.roundWordPools.player = playerWords;
-    state.roundWordPools.bot = botWords;
-    state.roundWordPools.loading = false;
-  } catch (error) {
-    state.roundWordPools.loading = false;
-    state.roundWordPools.error = true;
-    console.error("Failed to load Datamuse words", error);
+  if (!isCurrentBotRound()) {
+    return;
   }
+
+  state.roundWordPools.player = playerWords;
+  state.roundWordPools.opponent = opponentWords;
 }
 
 async function getValidWords(startLetter, endLetter) {
@@ -699,24 +1080,14 @@ async function getValidWords(startLetter, endLetter) {
     wordCache.set(key, words);
     return words;
   } catch (error) {
-    console.warn("Using fallback words after Datamuse error", error);
     const fallback = FALLBACK_WORDS.filter((word) =>
+      word.length >= 4 &&
       word.startsWith(start) &&
-      word.endsWith(end) &&
-      word.length >= 4
+      word.endsWith(end)
     );
     wordCache.set(key, fallback);
     return fallback;
   }
-}
-
-function isCurrentRound(playerLetter, botLetter) {
-  return (
-    state.phase === "challenge" &&
-    !state.roundSettled &&
-    state.playerLetter === playerLetter &&
-    state.botLetter === botLetter
-  );
 }
 
 function pickBotWord(validWords, strategy) {
@@ -752,7 +1123,6 @@ function triggerConfetti() {
     bit.style.setProperty("--drift", `${randomInt(-120, 120)}px`);
     bit.style.animationDelay = `${Math.random() * 200}ms`;
     document.body.appendChild(bit);
-
     setTimeout(() => bit.remove(), 1300);
   }
 }

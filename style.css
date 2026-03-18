@@ -99,6 +99,53 @@ p {
   font-weight: 500;
 }
 
+.auth-card,
+.mode-panel {
+  margin-top: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: #ffffff;
+}
+
+.mode-panel {
+  margin-top: 1rem;
+}
+
+.mode-panel h3 {
+  margin-top: 0;
+  margin-bottom: 0.55rem;
+}
+
+.mode-group {
+  margin-top: 0.8rem;
+}
+
+.inline-row {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr auto;
+}
+
+.guest-form {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr auto;
+}
+
+.small-text {
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.auth-status {
+  margin-bottom: 0.55rem;
+  font-size: 0.9rem;
+}
+
 .difficulty-label {
   display: inline-block;
   margin-bottom: 0.4rem;
@@ -336,16 +383,18 @@ p {
   pointer-events: none;
   animation: confetti-fall 1.1s linear forwards;
 }
-  .footer {
-    margin-top: auto;
-    color: white;
-    padding: 10px;
-    text-align: center;
-  }
 
-  .footer-text {
-    font-size: 0.8em;
-  }
+.footer {
+  margin-top: 0.6rem;
+  color: #2b3443;
+  padding: 10px;
+  text-align: center;
+}
+
+.footer-text {
+  margin: 0;
+  font-size: 0.8em;
+}
 
 @keyframes rise-in {
   from {
@@ -396,6 +445,11 @@ p {
   }
 
   .word-form {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-row,
+  .guest-form {
     grid-template-columns: 1fr;
   }
 

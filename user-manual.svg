@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="980" viewBox="0 0 1400 980" role="img" aria-labelledby="title desc">
+  <title id="title">LetterLock User Manual</title>
+  <desc id="desc">Simple user guide and User-Input-System-Output flow for the LetterLock word game.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f1e8"/>
+      <stop offset="100%" stop-color="#e3edf7"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f9fcff"/>
+    </linearGradient>
+    <style>
+      .title { font: 700 52px 'Segoe UI', Tahoma, sans-serif; fill: #1f2530; }
+      .subtitle { font: 500 24px 'Segoe UI', Tahoma, sans-serif; fill: #455063; }
+      .h2 { font: 700 30px 'Segoe UI', Tahoma, sans-serif; fill: #1f2530; }
+      .body { font: 500 20px 'Segoe UI', Tahoma, sans-serif; fill: #2b3443; }
+      .small { font: 500 17px 'Segoe UI', Tahoma, sans-serif; fill: #4d5a70; }
+      .chip { font: 700 20px 'Segoe UI', Tahoma, sans-serif; fill: #ffffff; }
+      .stepnum { font: 700 24px 'Segoe UI', Tahoma, sans-serif; fill: #ffffff; }
+    </style>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M1,1 L12,7 L1,13 z" fill="#2f3a4e"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="980" fill="url(#bg)"/>
+
+  <rect x="42" y="34" width="1316" height="912" rx="26" fill="url(#card)" stroke="#d2dcea" stroke-width="2"/>
+
+  <text x="80" y="105" class="title">LetterLock - Quick User Manual</text>
+  <text x="80" y="145" class="subtitle">Simple flow, clear actions, immediate feedback</text>
+
+  <rect x="78" y="178" width="1244" height="230" rx="18" fill="#ffffff" stroke="#dbe4f2"/>
+  <text x="102" y="224" class="h2">A. User - Input - System Process - Output</text>
+
+  <rect x="110" y="258" width="250" height="112" rx="14" fill="#dd5a2a"/>
+  <text x="208" y="325" text-anchor="middle" class="chip">USER</text>
+
+  <rect x="414" y="258" width="250" height="112" rx="14" fill="#2466a6"/>
+  <text x="539" y="325" text-anchor="middle" class="chip">INPUT</text>
+
+  <rect x="718" y="258" width="250" height="112" rx="14" fill="#2f3a4e"/>
+  <text x="843" y="325" text-anchor="middle" class="chip">SYSTEM</text>
+
+  <rect x="1022" y="258" width="250" height="112" rx="14" fill="#1c9b59"/>
+  <text x="1147" y="325" text-anchor="middle" class="chip">OUTPUT</text>
+
+  <line x1="362" y1="314" x2="404" y2="314" stroke="#2f3a4e" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="666" y1="314" x2="708" y2="314" stroke="#2f3a4e" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="970" y1="314" x2="1012" y2="314" stroke="#2f3a4e" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <text x="110" y="390" class="small">User: chooses difficulty, picks a letter, types a word, submits.</text>
+  <text x="590" y="390" class="small">System: reveals letters, runs timer, validates word, bot responds, scores round.</text>
+
+  <rect x="78" y="434" width="1244" height="480" rx="18" fill="#ffffff" stroke="#dbe4f2"/>
+  <text x="102" y="478" class="h2">B. Step-by-Step (Low Confusion Design)</text>
+
+  <circle cx="120" cy="530" r="22" fill="#dd5a2a"/>
+  <text x="120" y="538" text-anchor="middle" class="stepnum">1</text>
+  <text x="160" y="536" class="body">Open game and choose bot difficulty (Easy, Medium, Hard).</text>
+
+  <circle cx="120" cy="592" r="22" fill="#2466a6"/>
+  <text x="120" y="600" text-anchor="middle" class="stepnum">2</text>
+  <text x="160" y="598" class="body">Press Start Game. Pick one letter A-Z, then press Lock Letter.</text>
+
+  <circle cx="120" cy="654" r="22" fill="#2f3a4e"/>
+  <text x="120" y="662" text-anchor="middle" class="stepnum">3</text>
+  <text x="160" y="660" class="body">Watch reveal (3..2..1). Note your letter and bot letter.</text>
+
+  <circle cx="120" cy="716" r="22" fill="#1c9b59"/>
+  <text x="120" y="724" text-anchor="middle" class="stepnum">4</text>
+  <text x="160" y="722" class="body">Type a word: starts with your letter, ends with bot letter, 4+ letters.</text>
+
+  <circle cx="120" cy="778" r="22" fill="#8f3d63"/>
+  <text x="120" y="786" text-anchor="middle" class="stepnum">5</text>
+  <text x="160" y="784" class="body">Submit before 15 seconds. First valid answer gets +1 point.</text>
+
+  <circle cx="120" cy="840" r="22" fill="#b57a12"/>
+  <text x="120" y="848" text-anchor="middle" class="stepnum">6</text>
+  <text x="160" y="846" class="body">Review result: winner, both words, and possible valid words. Choose Next Round or Back to Start.</text>
+
+  <text x="102" y="892" class="small">Norman-style clarity used: visible buttons, immediate validation feedback, simple 1-path flow, and predictable round cycle.</text>
+</svg>
