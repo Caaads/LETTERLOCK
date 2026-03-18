@@ -10,10 +10,20 @@ const REVEAL_BUFFER_SECONDS = 3;
 const MAX_ROOM_PLAYERS = 2;
 const STARTING_LIVES = 20;
 const DATAMUSE_URL = "https://api.datamuse.com/words";
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "";
+const corsOrigins = CORS_ORIGIN
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: corsOrigins.length > 0 ? corsOrigins : true,
+    methods: ["GET", "POST"]
+  }
+});
 
 app.use(express.static(path.join(__dirname)));
 

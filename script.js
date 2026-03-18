@@ -5,6 +5,9 @@ const STARTING_LIVES = 20;
 const DATAMUSE_URL = "https://api.datamuse.com/words";
 const DATAMUSE_MAX_RESULTS = 120;
 const wordCache = new Map();
+const APP_CONFIG = window.APP_CONFIG || {};
+const SOCKET_SERVER_URL = normalizeBaseUrl(APP_CONFIG.socketServerUrl);
+const OAUTH_REDIRECT_TO = normalizeBaseUrl(APP_CONFIG.oauthRedirectTo) || window.location.origin;
 
 const DIFFICULTIES = {
   easy: {
@@ -174,13 +177,12 @@ function bindEvents() {
 }
 
 function initializeSupabase() {
-  const config = window.APP_CONFIG || {};
-  if (!window.supabase || !config.supabaseUrl || !config.supabaseAnonKey) {
+  if (!window.supabase || !APP_CONFIG.supabaseUrl || !APP_CONFIG.supabaseAnonKey) {
     state.supabaseReady = false;
     return;
   }
 
-  supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+  supabaseClient = window.supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseAnonKey);
   state.supabaseReady = true;
 }
 
@@ -209,7 +211,7 @@ async function loginWithGoogle() {
   const { error } = await supabaseClient.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: window.location.origin
+      redirectTo: OAUTH_REDIRECT_TO
     }
   });
 
@@ -321,7 +323,9 @@ function joinMultiplayerRoom() {
 function connectSocket(roomCode) {
   disconnectSocket();
 
-  const socket = io();
+  const socket = SOCKET_SERVER_URL
+    ? io(SOCKET_SERVER_URL, { transports: ["websocket", "polling"] })
+    : io();
   state.socket = socket;
 
   socket.on("connect", () => {
@@ -489,6 +493,15 @@ function disconnectSocket() {
     state.socket.disconnect();
   }
   state.socket = null;
+}
+
+function normalizeBaseUrl(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  return trimmed.replace(/\/+$/, "");
 }
 
 function toggleLobbyReady() {
